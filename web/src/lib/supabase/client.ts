@@ -1,14 +1,22 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Les valeurs viennent de web/.env.local (jamais commité).
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let client: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Supabase: définis NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans web/.env.local",
-  );
+// Création différée : un build sans .env.local ne casse pas.
+export function getSupabase(): SupabaseClient {
+  if (client) return client;
+
+  // Les valeurs viennent de web/.env.local (jamais commité).
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error(
+      "Supabase: définis NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans web/.env.local",
+    );
+  }
+
+  // Clé publique uniquement. Ne jamais utiliser la clé service_role ici.
+  client = createClient(url, anonKey);
+  return client;
 }
-
-// Clé publique uniquement. Ne jamais utiliser la clé service_role ici.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
